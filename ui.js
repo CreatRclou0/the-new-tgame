@@ -44,6 +44,10 @@ export class UIController {
             carsPassedStat: document.getElementById('carsPassedStat'),
             avgWaitStat: document.getElementById('avgWaitStat'),
             currentCarsStat: document.getElementById('currentCarsStat'),
+            northCountStat: document.getElementById('northCountStat'),
+            southCountStat: document.getElementById('southCountStat'),
+            eastCountStat: document.getElementById('eastCountStat'),
+            westCountStat: document.getElementById('westCountStat'),
             
             // Light status
             northLight: document.getElementById('north-light'),
