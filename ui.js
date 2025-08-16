@@ -31,6 +31,8 @@ export class UIController {
             minGreenTime: document.getElementById('minGreenTime'),
             detectorValue: document.getElementById('detectorValue'),
             minGreenValue: document.getElementById('minGreenValue'),
+            adaptiveYellowDuration: document.getElementById('adaptiveYellowDuration'),
+            adaptiveYellowValue: document.getElementById('adaptiveYellowValue'),
             
             // Car controls
             carSpawnRate: document.getElementById('carSpawnRate'),
@@ -175,7 +177,7 @@ export class UIController {
 
     updateStatistics() {
         const stats = this.gameEngine.getStatistics();
-        const totalCarsDetected = this.gameEngine.getSensorSystem().getTotalCarsDetected();
+        const totalCarsDetected = this.gameEngine.sensorSystem.getTotalCarsDetected();
         
         this.elements.carsPassedStat.textContent = stats.totalCarsPassed;
         this.elements.avgWaitStat.textContent = stats.averageWaitTime.toFixed(1) + 's';
