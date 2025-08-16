@@ -82,5 +82,3 @@ class TrafficSimulator {
 document.addEventListener('DOMContentLoaded', () => {
     window.trafficSimulator = new TrafficSimulator();
 });
-
-const simulator = new TrafficSimulator();
