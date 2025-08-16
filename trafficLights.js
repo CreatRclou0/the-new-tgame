@@ -274,6 +274,14 @@ export class TrafficLightController {
     updateAdaptiveLogic(sensorData, deltaTime) {
         if (this.mode !== CONFIG.MODES.ADAPTIVE || !this.adaptiveState.isActive) return;
 
+        // Check if we need to reset car counts on phase change
+        const currentPhase = this.adaptiveState.currentPhase;
+        if (this.lastPhase && this.lastPhase !== currentPhase) {
+            // Phase changed, reset will be handled by the sensor system
+            console.log(`Adaptive Mode: Phase changed from ${this.lastPhase} to ${currentPhase}, car counts will reset`);
+        }
+        this.lastPhase = currentPhase;
+
         // Calculate priority scores for each pair
         const weScore = this.calculatePairScore('WE', sensorData);
         const nsScore = this.calculatePairScore('NS', sensorData);

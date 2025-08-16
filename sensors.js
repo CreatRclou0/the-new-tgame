@@ -43,6 +43,12 @@ export class SensorSystem {
             this.waitingCars[direction] = null;
         });
 
+        // Check if this is adaptive mode and if we should reset counts
+        if (this.shouldResetCounts) {
+            this.resetAllCarCounts();
+            this.shouldResetCounts = false;
+        }
+
         // Process each car
         cars.forEach(car => {
             const direction = car.getDirection();
@@ -312,6 +318,11 @@ export class SensorSystem {
         Object.values(CONFIG.DIRECTIONS).forEach(direction => {
             this.totalCarsDetected[direction] = 0;
         });
+        console.log('Adaptive Mode: Car counts reset for new cycle');
+    }
+    
+    triggerCountReset() {
+        this.shouldResetCounts = true;
     }
 
     reset() {

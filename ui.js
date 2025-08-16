@@ -68,6 +68,7 @@ export class UIController {
         this.elements.modeSelect.addEventListener('change', (e) => {
             this.gameEngine.updateMode(e.target.value);
             this.updateModeDisplay();
+            this.updateSliderValues(); // Update sliders when mode changes
         });
 
         // Control buttons
@@ -88,6 +89,7 @@ export class UIController {
         // Adaptive controls
         this.setupSlider('detectorDistance', 'detectorValue', 'DETECTOR_DISTANCE');
         this.setupSlider('minGreenTime', 'minGreenValue', 'MIN_GREEN_TIME', (value) => value * 1000);
+        this.setupSlider('adaptiveYellowDuration', 'adaptiveYellowValue', 'YELLOW_DURATION', (value) => value * 1000);
 
         // Car controls
         this.setupSlider('carSpawnRate', 'spawnValue', 'CAR_SPAWN_RATE');
@@ -106,13 +108,52 @@ export class UIController {
             valueDisplay.textContent = value;
             
             const settingValue = transform ? transform(value) : value;
-            this.gameEngine.updateSetting(settingKey, settingValue);
+            
+            // For yellow duration, update the correct mode
+            if (settingKey === 'YELLOW_DURATION') {
+                if (sliderId === 'adaptiveYellowDuration') {
+                    this.gameEngine.updateSetting(settingKey, settingValue, CONFIG.MODES.ADAPTIVE);
+                } else {
+                    this.gameEngine.updateSetting(settingKey, settingValue, CONFIG.MODES.FIXED);
+                }
+            } else {
+                this.gameEngine.updateSetting(settingKey, settingValue);
+            }
         });
 
         // Initialize display
         valueDisplay.textContent = slider.value;
     }
 
+    updateSliderValues() {
+        const mode = this.gameEngine.getCurrentMode();
+        const settings = this.gameEngine.getSettings();
+        
+        // Update slider values based on current mode settings
+        if (mode === CONFIG.MODES.FIXED) {
+            this.elements.greenDuration.value = settings.GREEN_DURATION / 1000;
+            this.elements.greenValue.textContent = settings.GREEN_DURATION / 1000;
+            this.elements.yellowDuration.value = settings.YELLOW_DURATION / 1000;
+            this.elements.yellowValue.textContent = settings.YELLOW_DURATION / 1000;
+            this.elements.redDuration.value = settings.RED_DURATION / 1000;
+            this.elements.redValue.textContent = settings.RED_DURATION / 1000;
+        } else {
+            this.elements.detectorDistance.value = settings.DETECTOR_DISTANCE;
+            this.elements.detectorValue.textContent = settings.DETECTOR_DISTANCE;
+            this.elements.minGreenTime.value = settings.MIN_GREEN_TIME / 1000;
+            this.elements.minGreenValue.textContent = settings.MIN_GREEN_TIME / 1000;
+            if (this.elements.adaptiveYellowDuration) {
+                this.elements.adaptiveYellowDuration.value = settings.YELLOW_DURATION / 1000;
+                this.elements.adaptiveYellowValue.textContent = settings.YELLOW_DURATION / 1000;
+            }
+        }
+        
+        // Car settings are shared
+        this.elements.carSpawnRate.value = settings.CAR_SPAWN_RATE;
+        this.elements.spawnValue.textContent = settings.CAR_SPAWN_RATE;
+        this.elements.carSpeed.value = settings.CAR_SPEED;
+        this.elements.speedValue.textContent = settings.CAR_SPEED;
+    }
     updateModeDisplay() {
         const mode = this.gameEngine.getCurrentMode();
         
