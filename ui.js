@@ -175,7 +175,7 @@ export class UIController {
 
     updateStatistics() {
         const stats = this.gameEngine.getStatistics();
-        const totalCarsDetected = this.gameEngine.sensorSystem.getTotalCarsDetected();
+        const totalCarsDetected = this.gameEngine.getSensorSystem().getTotalCarsDetected();
         
         this.elements.carsPassedStat.textContent = stats.totalCarsPassed;
         this.elements.avgWaitStat.textContent = stats.averageWaitTime.toFixed(1) + 's';
