@@ -4,7 +4,7 @@ import { CarManager } from './cars.js';
 import { SensorSystem } from './sensors.js';
 import { Statistics } from './statistics.js';
 import { CONFIG } from './config.js';
-// ...existing code...
+import { BezierPathSystem } from './bezierPaths.js';
 
 export class GameEngine {
     constructor(canvas, ctx) {
@@ -13,6 +13,10 @@ export class GameEngine {
         
         // Shared intersection
         this.intersection = new Intersection(CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2);
+        
+        // Bézier path system for turning
+        this.bezierSystem = new BezierPathSystem();
+        this.showPaths = false; // Debug toggle
         
         // Current active mode
         this.mode = CONFIG.MODES.FIXED;
@@ -91,6 +95,11 @@ export class GameEngine {
         
         // Render intersection
         this.intersection.render(this.ctx);
+        
+        // Debug: render Bézier paths if enabled
+        if (this.showPaths) {
+            this.bezierSystem.renderPaths(this.ctx, true, true);
+        }
         
         // Render sensor detection zones (only in adaptive mode)
         if (this.mode === CONFIG.MODES.ADAPTIVE) {
@@ -195,6 +204,12 @@ export class GameEngine {
     
     getSensorSystem() {
         return this.getCurrentModeComponents().sensorSystem;
+    }
+
+    // Debug method to toggle path visualization
+    togglePathVisualization() {
+        this.showPaths = !this.showPaths;
+        return this.showPaths;
     }
 
     setLaneMapping(laneMapping, paths, getPathIndex) {

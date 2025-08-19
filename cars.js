@@ -1,5 +1,6 @@
 import { CONFIG } from "./config.js";
 import { utils } from './utils.js';
+import { BezierPathSystem } from './bezierPaths.js';
 
 export class Car {
     constructor({ id, direction, intersection }) {
@@ -7,9 +8,12 @@ export class Car {
         this.fromDirection = direction;
         this.intersection = intersection;
         
-    // Always go straight
-    this.turnType = CONFIG.TURN_TYPES.STRAIGHT;
-    this.toDirection = this.calculateToDirection();
+        // Initialize Bézier path system
+        this.bezierSystem = new BezierPathSystem();
+        
+        // Choose movement type (straight, left, right)
+        this.chooseTurnType();
+        this.toDirection = this.calculateToDirection();
         
         // Position and movement
         const spawnPoint = intersection.spawnPoints[direction];
@@ -30,17 +34,51 @@ export class Car {
         this.totalWaitTime = 0;
         this.isInIntersection = false;
         this.pathProgress = 0;
-    // ...existing code...
+        
+        // Bézier path properties
+        this.bezierPath = null;
+        this.bezierT = 0;
+        this.pathLength = 0;
+        this.isFollowingPath = false;
         
         // Calculate target position for movement
         this.calculateTargetPosition();
+        this.initializePath();
+    }
+
+    chooseTurnType() {
+        // 70% straight, 15% left, 15% right
+        const rand = Math.random();
+        if (rand < 0.70) {
+            this.turnType = CONFIG.TURN_TYPES.STRAIGHT;
+        } else if (rand < 0.85) {
+            this.turnType = CONFIG.TURN_TYPES.LEFT;
+        } else {
+            this.turnType = CONFIG.TURN_TYPES.RIGHT;
+        }
     }
 
     calculateToDirection() {
-        // Only straight
         const directions = [CONFIG.DIRECTIONS.NORTH, CONFIG.DIRECTIONS.EAST, CONFIG.DIRECTIONS.SOUTH, CONFIG.DIRECTIONS.WEST];
         const currentIndex = directions.indexOf(this.fromDirection);
-        return directions[(currentIndex + 2) % 4]; // Go straight
+        
+        switch (this.turnType) {
+            case CONFIG.TURN_TYPES.STRAIGHT:
+                return directions[(currentIndex + 2) % 4]; // Opposite direction
+            case CONFIG.TURN_TYPES.LEFT:
+                return directions[(currentIndex + 3) % 4]; // Turn left
+            case CONFIG.TURN_TYPES.RIGHT:
+                return directions[(currentIndex + 1) % 4]; // Turn right
+            default:
+                return directions[(currentIndex + 2) % 4]; // Default to straight
+        }
+    }
+
+    initializePath() {
+        this.bezierPath = this.bezierSystem.getPath(this.fromDirection, this.toDirection, this.turnType);
+        if (this.bezierPath) {
+            this.pathLength = this.bezierSystem.calculatePathLength(this.bezierPath);
+        }
     }
 
     getInitialAngle() {
@@ -85,8 +123,8 @@ calculateTargetPosition() {
                 break;
         }
 
-        // Update position based on speed and direction (keep cars in straight lines)
-        if (this.speed > 0) {
+        // Update position based on speed and direction (only if not following Bézier path)
+        if (this.speed > 0 && !this.isFollowingPath) {
             // Move based on the angle the car is facing
             this.x += Math.cos(this.angle) * this.speed * dt;
             this.y += Math.sin(this.angle) * this.speed * dt;
@@ -143,12 +181,49 @@ calculateTargetPosition() {
     updateCrossing(dt) {
         // Accelerate through intersection
         this.speed = Math.min(this.maxSpeed * 1.2, this.speed + 40 * dt);
-        // No turning, just go straight
+        
+        // Use Bézier path if available and in intersection
+        if (this.bezierPath && this.isInIntersection && !this.isFollowingPath) {
+            this.isFollowingPath = true;
+            this.bezierT = 0;
+        }
+        
+        if (this.isFollowingPath && this.bezierPath) {
+            this.followBezierPath(dt);
+        }
+        
         // Check if we've exited the intersection
         if (!this.isInIntersection && this.pathProgress > 0) {
             this.state = 'exiting';
+            this.isFollowingPath = false;
         }
         this.pathProgress += dt;
+    }
+
+    followBezierPath(dt) {
+        // Calculate how much to advance along the path based on speed
+        const distanceToMove = this.speed * dt;
+        const tIncrement = distanceToMove / this.pathLength;
+        
+        this.bezierT = Math.min(1, this.bezierT + tIncrement);
+        
+        // Get position and tangent from Bézier curve
+        const position = this.bezierSystem.evaluateBezier(this.bezierPath, this.bezierT);
+        const tangent = this.bezierSystem.evaluateBezierTangent(this.bezierPath, this.bezierT);
+        
+        // Update car position
+        this.x = position.x;
+        this.y = position.y;
+        
+        // Update car angle based on tangent
+        if (tangent.dx !== 0 || tangent.dy !== 0) {
+            this.angle = Math.atan2(tangent.dy, tangent.dx);
+        }
+        
+        // If we've completed the path, stop following it
+        if (this.bezierT >= 1) {
+            this.isFollowingPath = false;
+        }
     }
 
     getTargetExitAngle() {

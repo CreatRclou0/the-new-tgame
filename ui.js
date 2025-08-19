@@ -55,7 +55,10 @@ export class UIController {
             northLight: document.getElementById('north-light'),
             eastLight: document.getElementById('east-light'),
             southLight: document.getElementById('south-light'),
-            westLight: document.getElementById('west-light')
+            westLight: document.getElementById('west-light'),
+            
+            // Debug controls
+            togglePathsBtn: document.getElementById('togglePathsBtn')
         };
     }
 
@@ -82,6 +85,14 @@ export class UIController {
         this.elements.resetBtn.addEventListener('click', () => {
             this.gameEngine.reset();
         });
+        
+        // Debug controls
+        if (this.elements.togglePathsBtn) {
+            this.elements.togglePathsBtn.addEventListener('click', () => {
+                const showing = this.gameEngine.togglePathVisualization();
+                this.elements.togglePathsBtn.textContent = showing ? '🔍 Hide Paths' : '🔍 Show Paths';
+            });
+        }
 
         // Fixed timer controls
         this.setupSlider('greenDuration', 'greenValue', 'GREEN_DURATION', (value) => value * 1000);

@@ -32,7 +32,9 @@ export const CONFIG = {
 
     // Turn types
     TURN_TYPES: {
-        STRAIGHT: 'straight'
+        STRAIGHT: 'straight',
+        LEFT: 'left',
+        RIGHT: 'right'
     },
 
     // Modes
