@@ -98,7 +98,7 @@ export class GameEngine {
         
         // Debug: render Bézier paths if enabled
         if (this.showPaths) {
-            this.bezierSystem.renderPaths(this.ctx, true, true);
+            this.bezierSystem.renderPaths(this.ctx, true, false); // Show only turn paths by default
         }
         
         // Render sensor detection zones (only in adaptive mode)

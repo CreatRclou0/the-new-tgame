@@ -47,15 +47,17 @@ export class Car {
     }
 
     chooseTurnType() {
-        // 70% straight, 15% left, 15% right
+        // 60% straight, 20% left, 20% right (increased turning for better demonstration)
         const rand = Math.random();
-        if (rand < 0.70) {
+        if (rand < 0.60) {
             this.turnType = CONFIG.TURN_TYPES.STRAIGHT;
-        } else if (rand < 0.85) {
+        } else if (rand < 0.80) {
             this.turnType = CONFIG.TURN_TYPES.LEFT;
         } else {
             this.turnType = CONFIG.TURN_TYPES.RIGHT;
         }
+        
+        console.log(`Car ${this.id} from ${this.fromDirection} chose: ${this.turnType}`);
     }
 
     calculateToDirection() {
@@ -78,6 +80,9 @@ export class Car {
         this.bezierPath = this.bezierSystem.getPath(this.fromDirection, this.toDirection, this.turnType);
         if (this.bezierPath) {
             this.pathLength = this.bezierSystem.calculatePathLength(this.bezierPath);
+            console.log(`Car ${this.id}: Path initialized for ${this.fromDirection}->${this.toDirection} (${this.turnType}), length: ${this.pathLength.toFixed(2)}`);
+        } else {
+            console.warn(`Car ${this.id}: No path found for ${this.fromDirection}->${this.toDirection} (${this.turnType})`);
         }
     }
 
@@ -182,14 +187,19 @@ calculateTargetPosition() {
         // Accelerate through intersection
         this.speed = Math.min(this.maxSpeed * 1.2, this.speed + 40 * dt);
         
-        // Use Bézier path if available and in intersection
-        if (this.bezierPath && this.isInIntersection && !this.isFollowingPath) {
+        // Start following Bézier path when entering intersection
+        if (this.bezierPath && this.isInIntersection && !this.isFollowingPath && this.turnType !== CONFIG.TURN_TYPES.STRAIGHT) {
             this.isFollowingPath = true;
             this.bezierT = 0;
+            console.log(`Car ${this.id} starting ${this.turnType} turn from ${this.fromDirection} to ${this.toDirection}`);
         }
         
+        // Follow Bézier path for turns
         if (this.isFollowingPath && this.bezierPath) {
             this.followBezierPath(dt);
+        } else if (this.turnType === CONFIG.TURN_TYPES.STRAIGHT) {
+            // For straight movement, continue normal linear movement
+            // Position is updated in the main update method
         }
         
         // Check if we've exited the intersection
@@ -201,9 +211,11 @@ calculateTargetPosition() {
     }
 
     followBezierPath(dt) {
-        // Calculate how much to advance along the path based on speed
-        const distanceToMove = this.speed * dt;
-        const tIncrement = distanceToMove / this.pathLength;
+        if (!this.bezierPath) return;
+        
+        // Calculate progression based on speed and path length
+        const baseSpeed = this.speed * dt;
+        const tIncrement = this.pathLength > 0 ? baseSpeed / this.pathLength : 0.02;
         
         this.bezierT = Math.min(1, this.bezierT + tIncrement);
         
@@ -218,6 +230,11 @@ calculateTargetPosition() {
         // Update car angle based on tangent
         if (tangent.dx !== 0 || tangent.dy !== 0) {
             this.angle = Math.atan2(tangent.dy, tangent.dx);
+        }
+        
+        // Smooth angle transitions to prevent jerky movement
+        if (Math.abs(this.angle) > Math.PI) {
+            this.angle = this.angle > 0 ? this.angle - 2 * Math.PI : this.angle + 2 * Math.PI;
         }
         
         // If we've completed the path, stop following it
@@ -239,6 +256,17 @@ calculateTargetPosition() {
     updateExiting(dt) {
         // Continue moving at normal speed in the direction we're facing
         this.speed = this.maxSpeed;
+        
+        // Ensure car is facing the correct direction after completing turn
+        if (!this.isFollowingPath && this.turnType !== CONFIG.TURN_TYPES.STRAIGHT) {
+            const targetAngle = this.getTargetExitAngle();
+            const angleDiff = targetAngle - this.angle;
+            
+            // Smooth angle correction
+            if (Math.abs(angleDiff) > 0.1) {
+                this.angle += angleDiff * 0.1; // Gradual correction
+            }
+        }
         
         // Check if we've reached the edge of the canvas
         let hasExited = false;

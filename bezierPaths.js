@@ -116,6 +116,8 @@ export class BezierPathSystem {
 
     // Calculate path length (approximate using segments)
     calculatePathLength(path, segments = 100) {
+        if (!path || !path.P0 || !path.P3) return 0;
+        
         let length = 0;
         let prevPoint = this.evaluateBezier(path, 0);
 
@@ -134,22 +136,24 @@ export class BezierPathSystem {
     // Debug: render all paths
     renderPaths(ctx, showTurns = true, showStraights = true) {
         ctx.save();
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.setLineDash([5, 5]);
 
         // Render turn paths in red
         if (showTurns) {
-            ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
             Object.entries(this.turnPaths).forEach(([key, path]) => {
                 this.renderPath(ctx, path);
+                this.renderPathLabel(ctx, path, key);
             });
         }
 
         // Render straight paths in blue
         if (showStraights) {
-            ctx.strokeStyle = 'rgba(0, 0, 255, 0.7)';
+            ctx.strokeStyle = 'rgba(0, 0, 255, 0.8)';
             Object.entries(this.straightPaths).forEach(([key, path]) => {
                 this.renderPath(ctx, path);
+                this.renderPathLabel(ctx, path, key);
             });
         }
 
@@ -169,9 +173,23 @@ export class BezierPathSystem {
         ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
         [P0, P1, P2, P3].forEach((point, index) => {
             ctx.beginPath();
-            ctx.arc(point[0], point[1], index === 0 || index === 3 ? 4 : 2, 0, Math.PI * 2);
+            ctx.arc(point[0], point[1], index === 0 || index === 3 ? 6 : 3, 0, Math.PI * 2);
             ctx.fill();
         });
+    }
+    
+    // Render path labels for debugging
+    renderPathLabel(ctx, path, key) {
+        const { P0, P3 } = path;
+        const midX = (P0[0] + P3[0]) / 2;
+        const midY = (P0[1] + P3[1]) / 2;
+        
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(key, midX, midY);
+        ctx.restore();
     }
 
     // Get all available movements from a direction
